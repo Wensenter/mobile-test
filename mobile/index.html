@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="ionic/css/ionic.min.css" />
+    <style>
+        .first {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            height: 125px;
+        }
+        
+        .first div {
+            width: calc( (100% - 10px)/2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        
+        .first div:nth-child(1) {
+            background: blue;
+        }
+        
+        .first div:nth-child(2) {
+            background: purple;
+        }
+        
+        .tab-item.activated,
+        .tab-item.active,
+        .tab-item.tab-item-active {
+            color: #387ef5;
+        }
+        
+        .tabs .tab-item .badge {
+            background: rgba(56, 126, 245, .5);
+        }
+        
+        img {
+            width: 100%;
+        }
+
+        ion-content.tebig {
+        	font-size:  100px!important;
+        	line-height: 100px;
+        }
+
+        ion-content.big {
+        	font-size:  60px!important;
+        	line-height: 100px;
+        }
+
+         ion-content.middle {
+        	font-size:  40px!important;
+        	line-height: 100px;
+        }
+
+         ion-content.normal {
+        	font-size:  16px!important;
+        	line-height: 100px;
+        }
+
+         ion-content.small {
+        	font-size:  10px!important;
+        	line-height: 100px;
+        }
+    </style>
+</head>
+
+<body ng-app="app">
+
+    <ion-nav-bar class="bar-positive">
+        <ion-nav-back-button></ion-nav-back-button>
+    </ion-nav-bar>
+
+    <ion-nav-view></ion-nav-view>
+
+    <script src="ionic/js/ionic.bundle.min.js"></script>
+    <script>
+        angular.module('app', ['ionic'])
+
+        //写路由
+        .config(['$stateProvider', '$urlRouterProvider', '$ionicConfigProvider', function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
+
+            $ionicConfigProvider.platform.android.tabs.position("bottom");
+            $ionicConfigProvider.tabs.style('standard');
+            $ionicConfigProvider.navBar.alignTitle('center');
+
+            $stateProvider
+                .state('tab', {
+                    url: '/tab',
+                    abstract: true, //可加、可不加  加上这个配置，就不能直接访问这个模板，只能通过访问它里面的子页面，才可以
+                    templateUrl: 'tab.html'
+                })
+
+            //首页的子页面
+            .state('tab.home', {
+                url: '/home',
+                views: {
+                    "home": {
+                        templateUrl: 'home.html',
+                        controller: 'homeCtrl'
+                    }
+                },
+
+                cache: false
+            })
+
+            //新闻的子页面 文章列表的路由
+            .state('tab.news', {
+                url: '/news',
+                views: {
+                    "news": {
+                        templateUrl: 'news.html',
+                        controller: 'newsCtrl'
+                    }
+                },
+
+                cache: false
+            })
+
+            //文章详情的路由
+            .state('articledetail', {
+                url: '/articledetail/:id', // 参数名字前面一定要加上冒号  id使我们随便取的名字
+
+                // angularjs里面的 0315文件夹里面的 12routeDemo.html  商品详情的那个例子
+
+                templateUrl: 'articleDetail.html',
+                controller: 'artcleDetailCtrl'
+            })
+
+
+
+            //社区的子页面  帖子分类页面
+            .state('tab.social', {
+                url: '/social',
+                views: {
+                    "social": {
+                        templateUrl: 'social.html',
+                        controller: 'socialCtrl'
+                    }
+                },
+
+                cache: false
+            })
+
+            //帖子列表页面
+            .state('tab.tielist', {
+                url: '/tielist/:id',
+                views: {
+                    "social": {
+                        templateUrl: 'tieList.html',
+                        controller: 'tieListCtrl'
+                    }
+                }
+            })
+
+            //帖子详情页面
+            .state('tab.tiedetail', {
+                url: '/tiedetail/:id',
+                views: {
+                    "social": {
+                        templateUrl: 'tieDetail.html',
+                        controller: 'tieDetailCtrl'
+                    }
+                }
+            })
+
+            //设置的子页面
+            .state('tab.set', {
+                url: '/set',
+                views: {
+                    "set": {
+                        templateUrl: 'set.html',
+                        controller: 'setCtrl'
+                    }
+                },
+
+                cache: false
+            })
+				
+			$urlRouterProvider.otherwise('/tab/home')
+
+        }])
+
+
+        //首页子页面控制器
+        .controller('homeCtrl', ['$scope', function($scope) {
+
+
+        }])
+
+        //新闻子页面控制器
+        .controller('newsCtrl', ['$scope', 'Article', '$ionicLoading', function($scope, Article, $ionicLoading) {
+
+            $ionicLoading.show({
+                template: '程序员拼命撸代码....'
+            });
+
+            var catid = 0;
+            var pageNumber = 0;
+
+            $scope.ifMore = false;
+            $scope.listData = [];
+
+            //调用获取文章分类的函数
+            Article.fen().then((res) => {
+                $scope.fenData = res.result;
+                //页面第一次进入的时候，我要拿到第一个分类的catId
+                catid = res.result[0].catid;
+                $scope.ifMore = true;
+            });
+
+
+            //分类点击事件
+            $scope.loadList = function(catId) {
+                //把当前点击的分类的catId赋值给catid;
+                catid = catId;
+                $scope.ifMore = true;
+                pageNumber = 1;
+                // console.log(catId);
+                // 当我们去点击分类的时候，要加载的数据就是第一页的数据
+                Article.list(catId, pageNumber).then((res) => $scope.listData = res.result)
+            }
+
+
+
+            //上拉加载所要执行的函数
+            $scope.loadMore = function() {
+
+                ++pageNumber;
+
+                Article.list(catid, pageNumber).then((res) => {
+                    res.result.length ? $scope.listData = $scope.listData.concat(res.result) : $scope.ifMore = false;
+                    $scope.$broadcast('scroll.infiniteScrollComplete');
+                    $ionicLoading.hide();
+                });
+
+            }
+
+        }])
+
+        //社区子页面控制器  帖子分类的页面
+        .controller('socialCtrl', ['$scope', 'Tie', function($scope, Tie) {
+
+            //请求获取帖子分类的数据
+            Tie.fen().then((res) => $scope.listData = res.result);
+
+        }])
+
+        //帖子列表的控制器
+        .controller('tieListCtrl', ['$scope', 'Tie', '$stateParams', function($scope, Tie, $stateParams) {
+            var pageNumber = 0;
+            $scope.ifHide = true;
+            $scope.listData = [];
+
+
+            //上拉加载更多数据的方法
+            $scope.more = function() {
+                ++pageNumber;
+                //获取帖子列表的数据请求
+                Tie.list($stateParams.id, pageNumber).then((res) => {
+
+                    res.result.length ? $scope.listData = $scope.listData.concat(res.result) : $scope.ifHide = false;
+
+                    $scope.$broadcast('scroll.infiniteScrollComplete');
+
+                });
+            }
+
+
+        }])
+
+
+        //帖子详情的控制器
+        .controller('tieDetailCtrl', ['$scope', 'Tie', '$stateParams', function($scope, Tie, $stateParams) {
+
+            //获取帖子详情的数据请求
+            Tie.detail($stateParams.id).then((res) => {
+
+                $scope.detailData = res.result;
+                console.log(res.result);
+
+            });
+
+
+        }])
+
+
+
+        //设置子页面控制器
+        .controller('setCtrl', ['$scope', function($scope) {
+
+
+        }])
+
+        //文章详情的控制器
+        .controller('artcleDetailCtrl', ['$scope', 'Article', '$stateParams', '$ionicHistory', '$ionicPopup', function($scope, Article, $stateParams, $ionicHistory, $ionicPopup) {
+            console.log($ionicHistory.backTitle());
+            $scope.backTitle = $ionicHistory.backTitle();
+
+            $scope.back = function() {
+
+                    //返回上一页
+                    window.history.go(-1);
+                }
+                //console.log($stateParams.id);
+                //调用获取文章详情的接口
+            Article.detail($stateParams.id).then((res) => $scope.data = res.result[0]);
+
+            $scope.user = {};
+            $scope.user.choice = '100'; //设置一个初始值
+
+            //更改字号的函数
+            var popUp = '';
+            $scope.changeSize = function() {
+                popUp = $ionicPopup.show({
+                    templateUrl: 'fontSize.html',
+                    title: '正文字体',
+                    scope: $scope, //就是把当前的作用域赋值给弹框。这样弹框就能够拿到当前作用域里面的数据
+                    buttons: [{
+                        text: '取消',
+                        type: 'button-default',
+                        onTap: function(e) {
+                            popUp.close();
+                            e.preventDefault();
+                        }
+                    }, {
+                        text: '确定',
+                        type: 'button-positive',
+                        onTap: function(e) {
+                            console.log($scope.user);
+                            $scope.font = $scope.user.choice
+                                // return scope.data.response;
+                        }
+                    }]
+                })
+            }
+
+        }])
+
+
+
+        //Service
+        .service('Article', ['$http', '$q', function($http, $q) {
+
+            //请求文章分类
+            this.fen = function() {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getPortalCate'
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+            };
+
+            //请求文章列表
+            this.list = function(id, pageNumber) {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getPortalList',
+                        catid: id,
+                        page: pageNumber
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+            };
+
+
+            //获取文章详情的数据
+            this.detail = function(id) {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getPortalArticle',
+                        aid: id
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+
+            }
+        }])
+
+
+        //帖子相关的数据请求
+        .service('Tie', ['$http', '$q', function($http, $q) {
+
+            // 获取帖子分类
+            this.fen = function() {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getThreadCate'
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+            };
+
+
+            //获取帖子列表
+            this.list = function(Id, pageNumber) {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getThreadList',
+                        fid: Id,
+                        page: pageNumber
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+            };
+
+            //获取帖子详情
+            this.detail = function(id) {
+                var defer = $q.defer();
+
+                $http.get('http://www.phonegap100.com/appapi.php', {
+                    params: {
+                        a: 'getThreadContent',
+                        tid: id
+                    }
+                }).then((res) => defer.resolve(res.data), (err) => alert('请求失败'))
+
+                return defer.promise;
+            }
+        }])
+    </script>
+
+    <script type="text/ng-template" id="fontSize.html">
+        <ion-radio ng-model="user.choice" ng-value="'100'">特大字号</ion-radio>
+        <ion-radio ng-model="user.choice" ng-value="'60'">大字号</ion-radio>
+        <ion-radio ng-model="user.choice" ng-value="'40'">中字号</ion-radio>
+        <ion-radio ng-model="user.choice" ng-value="'16'">正常</ion-radio>
+        <ion-radio ng-model="user.choice" ng-value="'10'">小子好</ion-radio>
+    </script>
+
+    <script type="text/ng-template" id="tab.html">
+        <ion-tabs class="tabs-icon-top">
+            <ion-tab title="首页" icon-on="ion-ios-home" icon-off="ion-ios-home-outline" ui-sref="tab.home">
+                <ion-nav-view name="home"></ion-nav-view>
+            </ion-tab>
+            <ion-tab title="新闻" icon-on="ion-ios-chatboxes" icon-off="ion-ios-chatboxes-outline" ui-sref="tab.news" badge="10">
+                <ion-nav-view name="news"></ion-nav-view>
+            </ion-tab>
+            <ion-tab title="社区" icon-on="ion-ios-gear" icon-off="ion-ios-gear-outline" ui-sref="tab.social">
+                <ion-nav-view name="social"></ion-nav-view>
+            </ion-tab>
+            <ion-tab title="设置" icon-on="ion-ios-toggle" icon-off="ion-ios-toggle-outline" ui-sref="tab.set">
+                <ion-nav-view name="set"></ion-nav-view>
+            </ion-tab>
+        </ion-tabs>
+    </script>
+
+    <script type="text/ng-template" id="home.html">
+        <ion-header-bar class="bar-positive">
+            <h1 class="title">首页</h1>
+        </ion-header-bar>
+        <ion-content>
+
+
+            <ion-slide-box auto-play="true" does-continue="true">
+                <ion-slide>
+                    <img src="img/1.jpg" alt="">
+                </ion-slide>
+                <ion-slide>
+                    <img src="img/2.jpg" alt="">
+                </ion-slide>
+
+
+            </ion-slide-box>
+
+            <div class="first">
+                <div class="">
+                    酒店
+                    <span class="icon ion-home"></span>
+                </div>
+                <div class="">
+                    <span class="icon ion-person"></span> 我的写成
+                </div>
+            </div>
+        </ion-content>
+    </script>
+
+    <script type="text/ng-template" id="news.html">
+        <ion-view view-title="文章列表">
+
+            <ion-content>
+                <!--分类-->
+                <div class="article-fen">
+                    <ul>
+                        <li ng-repeat="item in fenData">
+                            <a href="javascript:;" ng-click="loadList(item.catid)">{{ item.catname }}</a>
+
+                            <ul>
+                                <li ng-repeat="i in item.subcate">
+                                    <a href="javascript:;" ng-click="loadList(i.catid)">{{ i.catname }}</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                </div>
+
+
+                <p ng-hide="listData.length">该分类下，暂无数据！</p>
+                <!--分类下的列表-->
+                <div class="list">
+                    <a class="item item-avatar" ng-repeat="item in listData" href="#/articledetail/{{item.aid}}">
+                        <img ng-src="http://www.phonegap100.com/data/attachment/{{item.pic}}" alt="">
+                        <p>{{ item.title }}</p>
+                    </a>
+                </div>
+
+
+                <!--上拉加载-->
+                <ion-infinite-scroll distance="20px" on-infinite="loadMore()" ng-if="ifMore"></ion-infinite-scroll>
+
+            </ion-content>
+
+        </ion-view>
+
+
+
+    </script>
+
+    <script type="text/ng-template" id="social.html">
+        <ion-view view-title="帖子分类">
+            <ion-content>
+                <ul class="list">
+                    <li class="item" ng-repeat="item in listData">
+                        <a href="#/tab/tielist/{{item.fid}}" title="">{{item.name}}</a>
+
+                        <ul class="list">
+                            <li class="item" ng-repeat="i in item.subcate">
+                                <a href="#/tab/tielist/{{i.fid}}" title="">{{i.name}}</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </ion-content>
+        </ion-view>
+    </script>
+
+
+    <!-- 帖子列表的页面 -->
+    <script type="text/ng-template" id="tieList.html">
+        <ion-view view-title="帖子列表">
+            <ion-content>
+                <p ng-if="!listData.length">暂无任何数据！</p>
+                <ul class="list">
+                    <li class="item" ng-repeat="item in listData">
+                        <a href="#/tab/tiedetail/{{item.fid}}" title="">
+                            <h3>{{ item.subject}}</h3>
+                            <p>作者： {{item.author}}</p>
+                            <time datetime="{{item.lastpost}}">{{item.lastpost+'000' | date: 'yyyy-MM-dd hh:mm:ss' }}</time>
+                        </a>
+                    </li>
+                </ul>
+
+                <ion-infinite-scroll distance="30px" on-infinite="more()" ng-if="ifHide"></ion-infinite-scroll>
+            </ion-content>
+        </ion-view>
+    </script>
+
+    <script type="text/ng-template" id="set.html">
+        <ion-header-bar class="bar-positive">
+            <h1 class="title">我的</h1>
+        </ion-header-bar>
+        <ion-content>
+            <h1>设置</h1>
+        </ion-content>
+
+    </script>
+
+
+    <!--文章详情的模板-->
+    <script type="text/ng-template" id="articleDetail.html">
+        <ion-view view-title="文章详情" hide-nav-bar="true">
+            <ion-header-bar class="bar-positive">
+                <button ng-click="back()" class="button back-button buttons button-clear header-item"><i class="icon ion-ios-arrow-back"></i> <span>{{ backTitle }}</span></button>
+                <h1 class="title">文章详情</h1>
+            </ion-header-bar>
+            <ion-content ng-class="{'tebig': font == '100','big': font === '60', 'middle': font === '40', 'normal': font === '16', 'samll': font === '10'}">
+                <h2>{{data.title}}</h2>
+                <p>简介： {{ data.summary}} </p>
+
+                <p ng-bind-html="data.content"></p>
+            </ion-content>
+            <ion-footer-bar>
+                <button class="button button-positive" ng-click="changeSize()">字号</button>
+                <button class="button button-positive">收藏</button>
+            </ion-footer-bar>
+        </ion-view>
+    </script>
+
+
+    <!-- 帖子详情的模板 -->
+    <script type="text/ng-template" id="tieDetail.html">
+        <ion-view view-title="帖子详情">
+            <ion-content>
+                <ul class="list">
+                    <li class="item" ng-repeat="item in detailData">
+                        <p>{{item.author}}</p>
+                        <time datetime="{{item.dateline}}">{{ item.dateline + '000' | date: 'yyyy-MM-dd hh:mm:sss'}}</time>
+                        <p ng-bind-html="item.message"></p>
+                    </li>
+                </ul>
+            </ion-content>
+        </ion-view>
+    </script>
+</body>
+
+</html>
